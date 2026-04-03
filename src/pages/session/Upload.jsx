@@ -12,6 +12,16 @@ import { anonymiseResume, scoreResume } from '../../lib/api'
 import { ProgressBar } from '../../components/ui/ProgressBar'
 import { useToast } from '../../components/ui/Toast'
 
+// Fetch the session's job description fresh each time — avoids race condition
+async function fetchJobDescription(sessionId) {
+  const { data } = await supabase
+    .from('sessions')
+    .select('job_description, job_title')
+    .eq('id', sessionId)
+    .single()
+  return data?.job_description || ''
+}
+
 const STATUS_LABEL = {
   queued: 'Queued',
   uploading: 'Uploading',
@@ -172,7 +182,11 @@ export default function Upload() {
       updateFile(id, { progress: 65 })
 
       // 4. Score the ANONYMISED text against the job description
-      const jd = currentSessionRef.current?.job_description || ''
+      // CRITICAL: fetch JD fresh from DB — don't rely on session ref (race condition)
+      const jd = await fetchJobDescription(sessionId)
+      if (!jd) {
+        console.warn('Job description is empty — scores will be 0. Ensure a JD was set for this session.')
+      }
       const scoreData = await scoreResume({
         session_id: sessionId,
         resume_id: id,
