@@ -16,10 +16,12 @@ export const useAuthStore = create((set, get) => ({
         .select('role')
         .eq('id', session.user.id)
         .single()
+      const rawRole = profile?.role || session?.user?.user_metadata?.role || 'recruiter'
+      const normalizedRole = rawRole === 'company' ? 'recruiter' : rawRole
       set({
         user: session.user,
         session,
-        role: profile?.role || session?.user?.user_metadata?.role || 'company',
+        role: normalizedRole,
         loading: false,
       })
     } else {
@@ -33,10 +35,12 @@ export const useAuthStore = create((set, get) => ({
           .select('role')
           .eq('id', session.user.id)
           .single()
+        const rawRole = profile?.role || session.user.user_metadata?.role || 'recruiter'
+        const normalizedRole = rawRole === 'company' ? 'recruiter' : rawRole
         set({
           user: session.user,
           session,
-          role: profile?.role || session.user.user_metadata?.role || 'company',
+          role: normalizedRole,
           loading: false,
         })
       } else {

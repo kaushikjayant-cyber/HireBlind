@@ -1,7 +1,31 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
+import { Eye, Mail, Lock, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+
+const ROLES = [
+  {
+    id: 'student',
+    label: 'Student',
+    desc: 'Upload resume & get AI feedback',
+    icon: GraduationCap,
+    color: 'violet',
+  },
+  {
+    id: 'recruiter',
+    label: 'Recruiter',
+    desc: 'Post jobs & screen candidates',
+    icon: Briefcase,
+    color: 'blue',
+  },
+  {
+    id: 'admin',
+    label: 'Admin',
+    desc: 'Monitor system & audit logs',
+    icon: ShieldCheck,
+    color: 'indigo',
+  },
+]
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -36,8 +60,8 @@ export default function Register() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-2xl mb-4 shadow-lg">
             <Eye className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">HireBlind</h1>
-          <p className="text-gray-500 mt-1 text-sm">Hire for skills. Not stories.</p>
+          <h1 className="text-2xl font-bold text-gray-900">HireBlind Pro</h1>
+          <p className="text-gray-500 mt-1 text-sm">Bias-free hiring. Skill-first screening.</p>
         </div>
 
         <div className="card shadow-md">
@@ -47,7 +71,7 @@ export default function Register() {
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <CheckCircle className="w-12 h-12 text-emerald-500" />
               <p className="font-medium text-gray-800">Account created!</p>
-              <p className="text-sm text-gray-500">Check your email to verify your account. Redirecting to login...</p>
+              <p className="text-sm text-gray-500">Check your email to verify your account. Redirecting to login…</p>
             </div>
           ) : (
             <>
@@ -63,41 +87,58 @@ export default function Register() {
                   <label className="label">Email address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field pl-10" placeholder="you@company.com" required />
+                    <input
+                      type="email" value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="input-field pl-10"
+                      placeholder="you@example.com"
+                      required
+                    />
                   </div>
                 </div>
+
                 <div>
                   <label className="label">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-field pl-10" placeholder="Min. 6 characters" required />
+                    <input
+                      type="password" value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="input-field pl-10"
+                      placeholder="Min. 6 characters"
+                      required
+                    />
                   </div>
                 </div>
 
                 {/* Role selector */}
                 <div>
-                  <label className="label">Your role</label>
+                  <label className="label">Select your role</label>
                   <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: 'student', label: 'Student', desc: 'Apply & track jobs' },
-                      { id: 'company', label: 'Company', desc: 'Post & shortlist candidates' },
-                      { id: 'admin', label: 'Admin', desc: 'Manage sessions' },
-                    ].map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => setRole(r.id)}
-                        className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${
-                          role === r.id
-                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <User className="w-5 h-5" />
-                        <span className="text-sm font-medium">{r.label}</span>
-                        <span className="text-xs text-center text-gray-400">{r.desc}</span>
-                      </button>
-                    ))}
+                    {ROLES.map((r) => {
+                      const Icon = r.icon
+                      const active = role === r.id
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => setRole(r.id)}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center ${
+                            active
+                              ? r.color === 'violet'
+                                ? 'border-violet-500 bg-violet-50 text-violet-700'
+                                : r.color === 'blue'
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                              : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="text-sm font-semibold">{r.label}</span>
+                          <span className="text-[10px] leading-tight text-gray-400">{r.desc}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -105,7 +146,7 @@ export default function Register() {
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Creating account...
+                      Creating account…
                     </span>
                   ) : 'Create account'}
                 </button>

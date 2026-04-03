@@ -1,17 +1,27 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { useAuthStore } from './authStore'
 
 export const useSessionStore = create((set, get) => ({
   sessions: [],
   currentSession: null,
   loading: false,
 
-  fetchSessions: async (userId) => {
+  fetchSessions: async () => {
     set({ loading: true })
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { role, user } = useAuthStore.getState()
+
+    let query = supabase.from('sessions').select('*').order('created_at', { ascending: false })
+
+    // Recruiter sees only their own sessions; admin sees all
+    if (role === 'recruiter' || role === 'company') {
+      query = query.eq('created_by', user?.id)
+    } else if (role === 'student') {
+      // Students see all active sessions
+      query = query.eq('status', 'active')
+    }
+
+    const { data, error } = await query
     if (!error) set({ sessions: data || [] })
     set({ loading: false })
   },

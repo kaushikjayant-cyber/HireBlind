@@ -1,29 +1,29 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from services.parser import extract_text
 from services.pii_stripper import strip_pii
+from auth import require_recruiter_or_student
 
 router = APIRouter()
 
 @router.post("/anonymise")
 async def anonymise_resume(
     file: UploadFile = File(...),
-    session_id: str = Form(...)
+    session_id: str = Form(...),
+    current_user: dict = Depends(require_recruiter_or_student)
 ):
     """
     Parse a resume file (PDF/DOCX) and strip all PII.
+    Accessible by: Recruiter (for bulk hiring flow), Student (for personal analysis).
     Returns anonymised text + list of PII fields removed.
     """
-    # Validate file type
     fname = file.filename or "resume"
     if not (fname.lower().endswith(".pdf") or fname.lower().endswith(".docx")):
         raise HTTPException(status_code=400, detail="Only PDF and DOCX files are accepted.")
 
-    # Validate file size (5MB)
     contents = await file.read()
     if len(contents) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File exceeds 5MB limit.")
 
-    # Extract text
     try:
         raw_text = extract_text(contents, fname)
     except ValueError as e:
@@ -32,7 +32,6 @@ async def anonymise_resume(
     if not raw_text.strip():
         raise HTTPException(status_code=422, detail="Could not extract any text from the file.")
 
-    # Strip PII
     result = strip_pii(raw_text)
 
     return {
@@ -48,9 +47,13 @@ async def anonymise_resume(
 
 
 @router.post("/anonymise/text")
-async def anonymise_text(payload: dict):
+async def anonymise_text(
+    payload: dict,
+    current_user: dict = Depends(require_recruiter_or_student)
+):
     """
     Anonymise plain text (for testing / demo).
+    Accessible by: Recruiter and Student.
     Body: { "text": "..." }
     """
     text = payload.get("text", "")

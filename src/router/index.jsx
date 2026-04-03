@@ -12,15 +12,33 @@ import Interviews from '../pages/session/Interviews'
 import AdminSettings from '../pages/admin/Settings'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
-function ProtectedRoute({ children, adminOnly = false, requireStaff = false }) {
+// Recruiter-only routes (company / recruiter role)
+function RecruiterRoute({ children }) {
   const { user, loading, role } = useAuthStore()
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (adminOnly && role !== 'admin') return <Navigate to="/dashboard" replace />
-  if (requireStaff && role === 'student') return <Navigate to="/dashboard" replace />
+  if (role !== 'recruiter' && role !== 'company') return <Navigate to="/dashboard" replace />
   return children
 }
 
+// Admin-only routes
+function AdminRoute({ children }) {
+  const { user, loading, role } = useAuthStore()
+  if (loading) return <LoadingSpinner fullScreen />
+  if (!user) return <Navigate to="/login" replace />
+  if (role !== 'admin') return <Navigate to="/dashboard" replace />
+  return children
+}
+
+// Any authenticated user
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuthStore()
+  if (loading) return <LoadingSpinner fullScreen />
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
+// Redirect if already logged in
 function PublicRoute({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <LoadingSpinner fullScreen />
@@ -31,18 +49,28 @@ function PublicRoute({ children }) {
 export default function AppRouter() {
   return (
     <Routes>
+      {/* Public */}
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+
+      {/* Protected shell */}
       <Route path="/" element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
+
+        {/* All roles — each role sees their own dashboard */}
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="session/new" element={<ProtectedRoute requireStaff><NewSession /></ProtectedRoute>} />
-        <Route path="session/:id/upload" element={<ProtectedRoute requireStaff><Upload /></ProtectedRoute>} />
-        <Route path="session/:id/results" element={<ProtectedRoute requireStaff><Results /></ProtectedRoute>} />
-        <Route path="session/:id/compliance" element={<ProtectedRoute requireStaff><Compliance /></ProtectedRoute>} />
-        <Route path="session/:id/interviews" element={<ProtectedRoute requireStaff><Interviews /></ProtectedRoute>} />
-        <Route path="admin/settings" element={<ProtectedRoute adminOnly><AdminSettings /></ProtectedRoute>} />
+
+        {/* Recruiter-only routes */}
+        <Route path="session/new" element={<RecruiterRoute><NewSession /></RecruiterRoute>} />
+        <Route path="session/:id/upload" element={<RecruiterRoute><Upload /></RecruiterRoute>} />
+        <Route path="session/:id/results" element={<RecruiterRoute><Results /></RecruiterRoute>} />
+        <Route path="session/:id/compliance" element={<RecruiterRoute><Compliance /></RecruiterRoute>} />
+        <Route path="session/:id/interviews" element={<RecruiterRoute><Interviews /></RecruiterRoute>} />
+
+        {/* Admin-only routes */}
+        <Route path="admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
       </Route>
+
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

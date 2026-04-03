@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from services.scorer import score_resume
+from auth import require_recruiter_or_student
 
 router = APIRouter()
 
@@ -13,10 +14,15 @@ class ScoreRequest(BaseModel):
     rank: Optional[int] = 1
 
 @router.post("/score")
-async def score_resume_endpoint(req: ScoreRequest):
+async def score_resume_endpoint(
+    req: ScoreRequest,
+    current_user: dict = Depends(require_recruiter_or_student)
+):
     """
-    Score an anonymised resume against the session job description.
-    Returns overall_score (0-100) and score_breakdown with explainability tags.
+    Score an anonymised resume against a job description.
+    Accessible by: Recruiter (for ranking candidates), Student (for personal score).
+    Admins are blocked — they do not participate in the hiring workflow.
+    Returns overall_score (0–100) and score_breakdown with explainability tags.
     """
     if not req.anonymised_text.strip():
         raise HTTPException(status_code=400, detail="No resume text provided.")

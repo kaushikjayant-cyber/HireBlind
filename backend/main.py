@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import anonymise, score, sessions, resumes, compliance
+from routers import anonymise, score, sessions, resumes, compliance, reveal
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -24,6 +24,7 @@ app.include_router(score.router, prefix="/api")
 app.include_router(sessions.router, prefix="/api")
 app.include_router(resumes.router, prefix="/api")
 app.include_router(compliance.router, prefix="/api")
+app.include_router(reveal.router, prefix="/api")
 
 @app.get("/")
 def root():

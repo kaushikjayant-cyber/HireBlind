@@ -1,25 +1,45 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, FolderOpen, Shield, Settings,
-  ChevronLeft, ChevronRight, Eye, LogOut
+  LayoutDashboard, Settings, ChevronLeft, ChevronRight, Eye, LogOut,
+  Briefcase, GraduationCap, ShieldCheck, Plus, UploadCloud, BarChart3, Users
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
-const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/session/new', icon: FolderOpen, label: 'New Session', requireStaff: true },
-  { to: '/admin/settings', icon: Settings, label: 'Settings', adminOnly: true },
+// Role-specific navigation configurations
+const adminNav = [
+  { to: '/dashboard', icon: ShieldCheck, label: 'System Panel' },
+  { to: '/admin/settings', icon: Settings, label: 'Platform Settings' },
 ]
+
+const recruiterNav = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Hiring Dashboard' },
+  { to: '/session/new', icon: Plus, label: 'New Job Description' },
+]
+
+const studentNav = [
+  { to: '/dashboard', icon: GraduationCap, label: 'Resume Analyzer' },
+]
+
+const roleLabels = {
+  admin: { label: 'Admin', color: 'bg-indigo-100 text-indigo-700', badgeColor: 'indigo' },
+  recruiter: { label: 'Recruiter', color: 'bg-blue-100 text-blue-700', badgeColor: 'blue' },
+  company: { label: 'Recruiter', color: 'bg-blue-100 text-blue-700', badgeColor: 'blue' },
+  student: { label: 'Student', color: 'bg-violet-100 text-violet-700', badgeColor: 'violet' },
+}
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const { user, role, logout } = useAuthStore()
   const navigate = useNavigate()
 
-  const initials = user?.email
-    ? user.email.slice(0, 2).toUpperCase()
-    : 'HB'
+  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : 'HB'
+  const roleInfo = roleLabels[role] || { label: role, color: 'bg-gray-100 text-gray-600' }
+
+  const navItems =
+    role === 'admin' ? adminNav :
+    role === 'student' ? studentNav :
+    recruiterNav // recruiter / company
 
   const handleLogout = async () => {
     await logout()
@@ -43,25 +63,46 @@ export default function Sidebar() {
         )}
       </div>
 
+      {/* Role Badge */}
+      {!collapsed && (
+        <div className={`mx-3 mt-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 ${roleInfo.color}`}>
+          {role === 'admin' && <ShieldCheck className="w-3.5 h-3.5" />}
+          {(role === 'recruiter' || role === 'company') && <Briefcase className="w-3.5 h-3.5" />}
+          {role === 'student' && <GraduationCap className="w-3.5 h-3.5" />}
+          {roleInfo.label} Portal
+        </div>
+      )}
+
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          if (item.adminOnly && role !== 'admin') return null
-          if (item.requireStaff && role === 'student') return null
-          return (
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-2">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              isActive ? 'sidebar-link-active' : 'sidebar-link'
+            }
+            title={collapsed ? item.label : undefined}
+            end={item.to === '/dashboard'}
+          >
+            <item.icon className="w-4 h-4 flex-shrink-0" />
+            {!collapsed && <span>{item.label}</span>}
+          </NavLink>
+        ))}
+
+        {/* Recruiter-specific quick actions */}
+        {(role === 'recruiter' || role === 'company') && !collapsed && (
+          <div className="pt-3 mt-3 border-t border-gray-100">
+            <p className="text-xs text-gray-400 font-medium px-3 mb-2 uppercase tracking-wider">Quick Actions</p>
             <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                isActive ? 'sidebar-link-active' : 'sidebar-link'
-              }
-              title={collapsed ? item.label : undefined}
+              to="/session/new"
+              className={({ isActive }) => isActive ? 'sidebar-link-active' : 'sidebar-link'}
             >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
+              <UploadCloud className="w-4 h-4 flex-shrink-0" />
+              <span>Upload Resumes</span>
             </NavLink>
-          )
-        })}
+          </div>
+        )}
       </nav>
 
       {/* User */}
@@ -73,10 +114,8 @@ export default function Sidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-800 truncate">{user?.email}</p>
-              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium mt-0.5 ${
-                role === 'admin' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'
-              }`}>
-                {role}
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium mt-0.5 ${roleInfo.color}`}>
+                {roleInfo.label}
               </span>
             </div>
           </div>

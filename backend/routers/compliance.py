@@ -1,13 +1,25 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from services.supabase_client import get_supabase
+from auth import get_current_user
 
 router = APIRouter()
 
 
 @router.get("/compliance/{session_id}")
-async def get_compliance_report(session_id: str):
-    """Return full compliance data for a session."""
+async def get_compliance_report(
+    session_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Return full compliance data for a session.
+    Accessible by: Admin (platform oversight) and Recruiter (own sessions).
+    Students are blocked — they do not have access to hiring session data.
+    """
+    role = current_user.get("role")
+    if role not in ("admin", "recruiter", "company"):
+        raise HTTPException(status_code=403, detail="Students cannot access compliance reports.")
+
     sb = get_supabase()
 
     session_res = sb.table("sessions").select("*").eq("id", session_id).single().execute()
@@ -20,7 +32,6 @@ async def get_compliance_report(session_id: str):
     override_logs = override_res.data or []
     resumes = resume_res.data or []
 
-    # PII type breakdown
     pii_by_type = {}
     for log in pii_logs:
         ft = log.get("field_stripped", "unknown")
