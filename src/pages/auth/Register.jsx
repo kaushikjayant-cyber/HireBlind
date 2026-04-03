@@ -1,27 +1,20 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, Mail, Lock, Briefcase, GraduationCap, ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react'
+import { Eye, Mail, Lock, Briefcase, ShieldCheck, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
 const ROLES = [
   {
-    id: 'student',
-    label: 'Student',
-    desc: 'Upload resume & get AI feedback',
-    icon: GraduationCap,
-    color: 'violet',
-  },
-  {
     id: 'recruiter',
     label: 'Recruiter',
-    desc: 'Post jobs & screen candidates',
+    desc: 'Upload resumes & screen candidates',
     icon: Briefcase,
     color: 'blue',
   },
   {
     id: 'admin',
     label: 'Admin',
-    desc: 'Monitor system & audit logs',
+    desc: 'Manage system & audit logs',
     icon: ShieldCheck,
     color: 'indigo',
   },
@@ -30,7 +23,7 @@ const ROLES = [
 export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState('student')
+  const [role, setRole] = useState('recruiter')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -91,7 +84,7 @@ export default function Register() {
                       type="email" value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="input-field pl-10"
-                      placeholder="you@example.com"
+                      placeholder="you@company.com"
                       required
                     />
                   </div>
@@ -111,10 +104,10 @@ export default function Register() {
                   </div>
                 </div>
 
-                {/* Role selector */}
+                {/* Role selector — Admin and Recruiter only */}
                 <div>
                   <label className="label">Select your role</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     {ROLES.map((r) => {
                       const Icon = r.icon
                       const active = role === r.id
@@ -125,9 +118,7 @@ export default function Register() {
                           onClick={() => setRole(r.id)}
                           className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 text-center ${
                             active
-                              ? r.color === 'violet'
-                                ? 'border-violet-500 bg-violet-50 text-violet-700'
-                                : r.color === 'blue'
+                              ? r.color === 'blue'
                                 ? 'border-blue-500 bg-blue-50 text-blue-700'
                                 : 'border-indigo-500 bg-indigo-50 text-indigo-700'
                               : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'

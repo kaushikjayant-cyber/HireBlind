@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
-import { ShieldCheck, Users, Activity, Settings, BarChart3, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { ShieldCheck, Users, Activity, Settings, BarChart3, Clock, AlertTriangle, CheckCircle2, Eye } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
-  const [stats, setStats] = useState({ users: 0, sessions: 0, resumes: 0, recruiters: 0, students: 0 })
+  const [stats, setStats] = useState({ users: 0, sessions: 0, resumes: 0, recruiters: 0, admins: 0 })
   const [recentUsers, setRecentUsers] = useState([])
   const [auditLogs, setAuditLogs] = useState([])
+  const [revealLogs, setRevealLogs] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,22 +19,24 @@ export default function AdminDashboard() {
   const fetchAdminData = async () => {
     setLoading(true)
     try {
-      const [usersRes, sessionsRes, resumesRes, auditRes] = await Promise.all([
+      const [usersRes, sessionsRes, resumesRes, auditRes, revealRes] = await Promise.all([
         supabase.from('users').select('*').order('created_at', { ascending: false }),
         supabase.from('sessions').select('id').eq('status', 'active'),
         supabase.from('resumes').select('id'),
         supabase.from('pii_audit_log').select('*').order('stripped_at', { ascending: false }).limit(10),
+        supabase.from('identity_reveal_log').select('*').order('revealed_at', { ascending: false }).limit(5),
       ])
 
       const users = usersRes.data || []
       setRecentUsers(users.slice(0, 5))
       setAuditLogs(auditRes.data || [])
+      setRevealLogs(revealRes.data || [])
       setStats({
         users: users.length,
         sessions: (sessionsRes.data || []).length,
         resumes: (resumesRes.data || []).length,
-        recruiters: users.filter(u => u.role === 'recruiter' || u.role === 'company').length,
-        students: users.filter(u => u.role === 'student').length,
+        recruiters: users.filter(u => u.role === 'recruiter').length,
+        admins: users.filter(u => u.role === 'admin').length,
       })
     } catch (err) {
       console.error('Admin data fetch error:', err)
@@ -119,10 +122,9 @@ export default function AdminDashboard() {
                   </div>
                   <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
                     u.role === 'admin' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                    u.role === 'recruiter' || u.role === 'company' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                    'bg-violet-50 text-violet-700 border-violet-200'
+                    'bg-blue-50 text-blue-700 border-blue-200'
                   }`}>
-                    {u.role === 'company' ? 'recruiter' : u.role}
+                    {u.role}
                   </span>
                 </div>
               ))}
@@ -174,23 +176,54 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Identity Reveal Log */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+        <h2 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <Eye className="w-5 h-5 text-rose-500" />
+          Identity Reveal Log
+          <span className="ml-auto text-xs text-slate-400 font-normal">Last 5 reveals</span>
+        </h2>
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <div className="w-5 h-5 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+          </div>
+        ) : revealLogs.length === 0 ? (
+          <p className="text-slate-400 text-sm text-center py-4">No identity reveals yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {revealLogs.map((log, i) => (
+              <div key={i} className="flex items-center gap-3 py-2 border-b border-slate-50 last:border-0">
+                <div className="w-7 h-7 rounded-lg bg-rose-100 flex items-center justify-center flex-shrink-0">
+                  <Eye className="w-3.5 h-3.5 text-rose-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-800">Resume <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">{log.resume_id?.slice(0, 8)}…</code> identity revealed</p>
+                  <p className="text-xs text-slate-400">
+                    {log.revealed_at ? new Date(log.revealed_at).toLocaleString() : '—'} · by {log.revealed_by || 'unknown'}
+                  </p>
+                </div>
+                {log.already_revealed && (
+                  <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full">Re-revealed</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Platform Role Summary */}
       <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-6">
         <h3 className="font-bold text-indigo-800 mb-3 flex items-center gap-2">
           <BarChart3 className="w-5 h-5" /> Platform Role Distribution
         </h3>
-        <div className="grid grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-2 gap-4 text-center">
           <div>
-            <p className="text-2xl font-extrabold text-indigo-700">{stats.users - stats.recruiters - stats.students}</p>
+            <p className="text-2xl font-extrabold text-indigo-700">{stats.admins}</p>
             <p className="text-xs text-indigo-500 font-medium mt-1">Admins</p>
           </div>
           <div>
             <p className="text-2xl font-extrabold text-blue-700">{stats.recruiters}</p>
             <p className="text-xs text-blue-500 font-medium mt-1">Recruiters</p>
-          </div>
-          <div>
-            <p className="text-2xl font-extrabold text-violet-700">{stats.students}</p>
-            <p className="text-xs text-violet-500 font-medium mt-1">Students</p>
           </div>
         </div>
       </div>

@@ -16,12 +16,13 @@ export const useAuthStore = create((set, get) => ({
         .select('role')
         .eq('id', session.user.id)
         .single()
+      // Only admin and recruiter are valid roles
       const rawRole = profile?.role || session?.user?.user_metadata?.role || 'recruiter'
-      const normalizedRole = rawRole === 'company' ? 'recruiter' : rawRole
+      const validRole = ['admin', 'recruiter'].includes(rawRole) ? rawRole : 'recruiter'
       set({
         user: session.user,
         session,
-        role: normalizedRole,
+        role: validRole,
         loading: false,
       })
     } else {
@@ -36,11 +37,11 @@ export const useAuthStore = create((set, get) => ({
           .eq('id', session.user.id)
           .single()
         const rawRole = profile?.role || session.user.user_metadata?.role || 'recruiter'
-        const normalizedRole = rawRole === 'company' ? 'recruiter' : rawRole
+        const validRole = ['admin', 'recruiter'].includes(rawRole) ? rawRole : 'recruiter'
         set({
           user: session.user,
           session,
-          role: normalizedRole,
+          role: validRole,
           loading: false,
         })
       } else {
@@ -64,17 +65,19 @@ export const useAuthStore = create((set, get) => ({
   },
 
   register: async (email, password, role) => {
+    // Ensure only valid roles can be registered
+    const safeRole = ['admin', 'recruiter'].includes(role) ? role : 'recruiter'
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { role } }
+      options: { data: { role: safeRole } }
     })
     if (error) throw error
     if (data.user) {
       await supabase.from('users').insert({
         id: data.user.id,
         email,
-        role,
+        role: safeRole,
         created_at: new Date().toISOString(),
       })
     }
@@ -87,4 +90,5 @@ export const useAuthStore = create((set, get) => ({
   },
 
   isAdmin: () => get().role === 'admin',
+  isRecruiter: () => get().role === 'recruiter',
 }))

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Settings, ChevronLeft, ChevronRight, Eye, LogOut,
-  Briefcase, GraduationCap, ShieldCheck, Plus, UploadCloud, BarChart3, Users
+  Briefcase, ShieldCheck, Plus, UploadCloud
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
@@ -17,15 +17,9 @@ const recruiterNav = [
   { to: '/session/new', icon: Plus, label: 'New Job Description' },
 ]
 
-const studentNav = [
-  { to: '/dashboard', icon: GraduationCap, label: 'Resume Analyzer' },
-]
-
 const roleLabels = {
-  admin: { label: 'Admin', color: 'bg-indigo-100 text-indigo-700', badgeColor: 'indigo' },
-  recruiter: { label: 'Recruiter', color: 'bg-blue-100 text-blue-700', badgeColor: 'blue' },
-  company: { label: 'Recruiter', color: 'bg-blue-100 text-blue-700', badgeColor: 'blue' },
-  student: { label: 'Student', color: 'bg-violet-100 text-violet-700', badgeColor: 'violet' },
+  admin: { label: 'Admin', color: 'bg-indigo-100 text-indigo-700' },
+  recruiter: { label: 'Recruiter', color: 'bg-blue-100 text-blue-700' },
 }
 
 export default function Sidebar() {
@@ -34,12 +28,9 @@ export default function Sidebar() {
   const navigate = useNavigate()
 
   const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : 'HB'
-  const roleInfo = roleLabels[role] || { label: role, color: 'bg-gray-100 text-gray-600' }
+  const roleInfo = roleLabels[role] || { label: role || 'User', color: 'bg-gray-100 text-gray-600' }
 
-  const navItems =
-    role === 'admin' ? adminNav :
-    role === 'student' ? studentNav :
-    recruiterNav // recruiter / company
+  const navItems = role === 'admin' ? adminNav : recruiterNav
 
   const handleLogout = async () => {
     await logout()
@@ -67,8 +58,7 @@ export default function Sidebar() {
       {!collapsed && (
         <div className={`mx-3 mt-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 ${roleInfo.color}`}>
           {role === 'admin' && <ShieldCheck className="w-3.5 h-3.5" />}
-          {(role === 'recruiter' || role === 'company') && <Briefcase className="w-3.5 h-3.5" />}
-          {role === 'student' && <GraduationCap className="w-3.5 h-3.5" />}
+          {role === 'recruiter' && <Briefcase className="w-3.5 h-3.5" />}
           {roleInfo.label} Portal
         </div>
       )}
@@ -91,7 +81,7 @@ export default function Sidebar() {
         ))}
 
         {/* Recruiter-specific quick actions */}
-        {(role === 'recruiter' || role === 'company') && !collapsed && (
+        {role === 'recruiter' && !collapsed && (
           <div className="pt-3 mt-3 border-t border-gray-100">
             <p className="text-xs text-gray-400 font-medium px-3 mb-2 uppercase tracking-wider">Quick Actions</p>
             <NavLink

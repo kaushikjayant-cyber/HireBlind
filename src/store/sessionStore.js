@@ -14,12 +14,10 @@ export const useSessionStore = create((set, get) => ({
     let query = supabase.from('sessions').select('*').order('created_at', { ascending: false })
 
     // Recruiter sees only their own sessions; admin sees all
-    if (role === 'recruiter' || role === 'company') {
+    if (role === 'recruiter') {
       query = query.eq('created_by', user?.id)
-    } else if (role === 'student') {
-      // Students see all active sessions
-      query = query.eq('status', 'active')
     }
+    // Admin: no filter — sees all sessions
 
     const { data, error } = await query
     if (!error) set({ sessions: data || [] })

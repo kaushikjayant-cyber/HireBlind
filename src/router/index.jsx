@@ -12,12 +12,12 @@ import Interviews from '../pages/session/Interviews'
 import AdminSettings from '../pages/admin/Settings'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 
-// Recruiter-only routes (company / recruiter role)
+// Recruiter-only routes
 function RecruiterRoute({ children }) {
   const { user, loading, role } = useAuthStore()
   if (loading) return <LoadingSpinner fullScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (role !== 'recruiter' && role !== 'company') return <Navigate to="/dashboard" replace />
+  if (role !== 'recruiter') return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -30,7 +30,7 @@ function AdminRoute({ children }) {
   return children
 }
 
-// Any authenticated user
+// Any authenticated user (admin or recruiter)
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <LoadingSpinner fullScreen />
@@ -57,7 +57,7 @@ export default function AppRouter() {
       <Route path="/" element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" replace />} />
 
-        {/* All roles — each role sees their own dashboard */}
+        {/* Role-dependent dashboard */}
         <Route path="dashboard" element={<Dashboard />} />
 
         {/* Recruiter-only routes */}

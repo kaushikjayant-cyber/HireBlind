@@ -1,10 +1,11 @@
 """
 RBAC helpers for FastAPI routes.
 
-The frontend sends the Supabase user ID as `X-User-Id` header and the
-role as `X-User-Role` header (set by the React app after it reads the
-user profile from Supabase).  The service-role Supabase client is then
-used to do a ground-truth lookup so the headers cannot be spoofed.
+The frontend sends the Supabase user ID as `X-User-Id` header.
+The service-role Supabase client is used to do a ground-truth lookup
+so the header cannot be spoofed.
+
+Roles: admin | recruiter  (student role has been removed)
 """
 
 import os
@@ -28,8 +29,8 @@ async def get_current_user(x_user_id: str = Header(None)):
 
 
 async def require_recruiter(current_user: dict = Depends(get_current_user)):
-    """Dependency: only allow recruiter or company role."""
-    if current_user.get("role") not in ("recruiter", "company"):
+    """Dependency: only allow recruiter role."""
+    if current_user.get("role") != "recruiter":
         raise HTTPException(
             status_code=403,
             detail="Access denied. This action requires a Recruiter account."
@@ -47,11 +48,11 @@ async def require_admin(current_user: dict = Depends(get_current_user)):
     return current_user
 
 
-async def require_recruiter_or_student(current_user: dict = Depends(get_current_user)):
-    """Dependency: allow recruiter, company, or student roles."""
-    if current_user.get("role") not in ("recruiter", "company", "student"):
+async def require_recruiter_or_admin(current_user: dict = Depends(get_current_user)):
+    """Dependency: allow recruiter or admin roles."""
+    if current_user.get("role") not in ("recruiter", "admin"):
         raise HTTPException(
             status_code=403,
-            detail="Access denied."
+            detail="Access denied. Recruiter or Admin role required."
         )
     return current_user

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from services.supabase_client import get_supabase
-from auth import require_recruiter, get_current_user
+from auth import require_recruiter, require_recruiter_or_admin
 
 router = APIRouter()
 
@@ -8,15 +8,19 @@ router = APIRouter()
 @router.get("/resumes/{session_id}")
 async def get_resumes(
     session_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_recruiter_or_admin)
 ):
-    """Admin and recruiters can list resumes in a session. Students blocked."""
-    role = current_user.get("role")
-    if role not in ("admin", "recruiter", "company"):
-        raise HTTPException(status_code=403, detail="Students cannot access candidate lists.")
+    """
+    Admin and Recruiters can list resumes in a session.
+    IMPORTANT: This returns ONLY anonymised fields — never original_file_name.
+    original_file_name is returned ONLY after explicit reveal via /reveal-identity/{id}.
+    """
     sb = get_supabase()
-    res = sb.table("resumes").select("*").eq("session_id", session_id)\
-        .order("overall_score", desc=True).execute()
+    res = sb.table("resumes")\
+        .select("id, session_id, overall_score, score_breakdown, is_shortlisted, manually_adjusted, identity_revealed, identity_revealed_at, processing_status, uploaded_at")\
+        .eq("session_id", session_id)\
+        .order("overall_score", desc=True)\
+        .execute()
     return res.data
 
 
@@ -29,3 +33,16 @@ async def delete_resume(
     sb = get_supabase()
     sb.table("resumes").delete().eq("id", resume_id).execute()
     return {"deleted": True}
+
+
+@router.patch("/resumes/{resume_id}/shortlist")
+async def toggle_shortlist(
+    resume_id: str,
+    body: dict,
+    current_user: dict = Depends(require_recruiter)
+):
+    """Recruiter-only: toggle shortlisted status on a resume."""
+    sb = get_supabase()
+    is_shortlisted = body.get("is_shortlisted", False)
+    res = sb.table("resumes").update({"is_shortlisted": is_shortlisted}).eq("id", resume_id).execute()
+    return res.data[0] if res.data else {}

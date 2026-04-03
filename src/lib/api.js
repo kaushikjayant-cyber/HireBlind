@@ -15,8 +15,9 @@ function getUserId() {
 }
 
 /**
- * POST /api/anonymise  — Recruiter or Student
+ * POST /api/anonymise  — Recruiter only
  * Uploads a resume file, strips PII, returns anonymised text.
+ * Anonymisation MUST happen before scoring (PII-first rule).
  */
 export async function anonymiseResume(file, sessionId) {
   const form = new FormData()
@@ -36,8 +37,9 @@ export async function anonymiseResume(file, sessionId) {
 }
 
 /**
- * POST /api/score  — Recruiter or Student
+ * POST /api/score  — Recruiter only
  * Scores anonymised resume text against a job description.
+ * Input MUST be pre-anonymised text (no PII).
  */
 export async function scoreResume(payload) {
   const res = await fetch(`${BASE}/api/score`, {

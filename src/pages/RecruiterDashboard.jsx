@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Plus, Users, Clock, CheckCircle, FolderOpen, ArrowRight,
-  Briefcase, UploadCloud, BarChart3, ChevronRight, Sparkles
+  Briefcase, UploadCloud, BarChart3, ChevronRight, Sparkles, ShieldCheck
 } from 'lucide-react'
 import { useSessionStore } from '../store/sessionStore'
 
@@ -65,7 +65,7 @@ function SessionRow({ session }) {
   )
 }
 
-export default function CompanyDashboard() {
+export default function RecruiterDashboard() {
   const { sessions, loading, fetchSessions } = useSessionStore()
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function CompanyDashboard() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Briefcase className="w-5 h-5 text-blue-600" />
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Recruiter Hiring Dashboard</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Recruiter Dashboard</span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Hiring Pipelines</h1>
           <p className="text-slate-500 mt-1">Create job descriptions, upload candidate resumes, and view anonymised rankings.</p>
@@ -97,6 +97,14 @@ export default function CompanyDashboard() {
         </Link>
       </div>
 
+      {/* Anonymity Notice */}
+      <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-3">
+        <ShieldCheck className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+        <p className="text-sm text-indigo-800">
+          <strong>Blind Evaluation Active:</strong> All candidate identities are hidden. You will only see anonymised resumes ranked by skills, experience, and relevance — never names, emails, or universities.
+        </p>
+      </div>
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
@@ -107,7 +115,7 @@ export default function CompanyDashboard() {
             <FolderOpen className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-semibold text-blue-900 group-hover:text-blue-800">Upload Job Description</p>
+            <p className="font-semibold text-blue-900 group-hover:text-blue-800">New Job Description</p>
             <p className="text-xs text-blue-600 mt-0.5">Create a new hiring pipeline</p>
           </div>
           <ArrowRight className="w-4 h-4 text-blue-400 ml-auto group-hover:translate-x-1 transition-transform" />
@@ -119,7 +127,7 @@ export default function CompanyDashboard() {
           </div>
           <div>
             <p className="font-semibold text-slate-900">Bulk Resume Upload</p>
-            <p className="text-xs text-slate-500 mt-0.5">Select a pipeline then upload resumes</p>
+            <p className="text-xs text-slate-500 mt-0.5">Upload up to 20 resumes per session</p>
           </div>
         </div>
 
@@ -129,7 +137,7 @@ export default function CompanyDashboard() {
           </div>
           <div>
             <p className="font-semibold text-slate-900">AI Ranking</p>
-            <p className="text-xs text-slate-500 mt-0.5">Anonymised candidate scoring</p>
+            <p className="text-xs text-slate-500 mt-0.5">Anonymised candidate scoring + explainability</p>
           </div>
         </div>
       </div>
