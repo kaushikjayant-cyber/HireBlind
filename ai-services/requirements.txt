@@ -1,9 +1,11 @@
 # HireBlind AI Service — Python Dependencies
 # Install with: pip install -r requirements.txt
+# Run with:     uvicorn app:app --host 0.0.0.0 --port 10000
 
-# ── Web framework ─────────────────────────────────────────────────────────────
-flask>=2.3.0
-flask-cors>=4.0.0
+# ── Web framework (FastAPI + ASGI server) ─────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
 
 # ── PDF parsing (install ALL — fallback chain in parser.py uses whichever works)
 pdfplumber>=0.10.0
