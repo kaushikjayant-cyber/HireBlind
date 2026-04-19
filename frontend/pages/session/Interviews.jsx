@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 import Modal from '../../components/ui/Modal'
 import { useToast } from '../../components/ui/Toast'
+import { revealIdentity } from '../../lib/api'
 
 export default function Interviews() {
   const { id: sessionId } = useParams()
@@ -77,15 +78,7 @@ export default function Interviews() {
     }
     setRevealLoading(true)
     try {
-      const res = await fetch(`/api/reveal-identity/${revealModal.id}`, {
-        method: 'POST',
-        headers: { 'X-User-Id': user?.id || '' },
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.detail || 'Reveal failed')
-      }
-      const data = await res.json()
+      const data = await revealIdentity(revealModal.id)
       const displayName = data.original_file_name || 'Unknown'
 
       // Update interview slot as revealed

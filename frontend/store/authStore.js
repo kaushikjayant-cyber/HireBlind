@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
+const BASE = import.meta.env.VITE_API_URL || ''
+
 export const useAuthStore = create((set, get) => ({
   user: null,
   role: null,
@@ -74,7 +76,7 @@ export const useAuthStore = create((set, get) => ({
 
     // If recruiter — validate key exists before creating account
     if (safeRole === 'recruiter') {
-      const check = await fetch(`/api/admin-key/validate`, {
+      const check = await fetch(`${BASE}/api/admin-key/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_key: adminKey.trim().toUpperCase() }),
@@ -103,14 +105,14 @@ export const useAuthStore = create((set, get) => ({
 
       if (safeRole === 'admin') {
         // Generate an admin_key for new admins via backend
-        await fetch(`/api/admin-key/generate`, {
+        await fetch(`${BASE}/api/admin-key/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ admin_id: data.user.id }),
         })
       } else if (safeRole === 'recruiter') {
         // Assign admin_id using the validated key
-        await fetch(`/api/admin-key/assign`, {
+        await fetch(`${BASE}/api/admin-key/assign`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: data.user.id, admin_key: adminKey.trim().toUpperCase() }),

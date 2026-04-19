@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, Mail, Lock, Briefcase, ShieldCheck, AlertCircle, CheckCircle, Key } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
+const BASE = import.meta.env.VITE_API_URL || ''
+
 const ROLES = [
   {
     id: 'recruiter',
@@ -41,7 +43,7 @@ export default function Register() {
     if (val.trim().length < 6) return
     setKeyStatus('checking')
     try {
-      const res = await fetch('/api/admin-key/validate', {
+      const res = await fetch(`${BASE}/api/admin-key/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_key: val.trim().toUpperCase() }),
