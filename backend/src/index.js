@@ -23,8 +23,28 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches allowed list or ends with vercel.app
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed === origin) return true;
+      if (origin.includes(allowed)) return true;
+      return false;
+    });
+
+    if (isAllowed || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
   credentials: true,
 }));
 

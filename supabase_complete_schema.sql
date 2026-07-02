@@ -17,6 +17,36 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Trigger to automatically insert users on sign up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  assigned_role TEXT;
+BEGIN
+  -- Validate and coalesce role (must be 'admin' or 'recruiter')
+  assigned_role := COALESCE(new.raw_user_meta_data->>'role', 'recruiter');
+  IF assigned_role NOT IN ('admin', 'recruiter') THEN
+    assigned_role := 'recruiter';
+  END IF;
+
+  INSERT INTO public.users (id, email, role, admin_key, created_at)
+  VALUES (
+    new.id,
+    new.email,
+    assigned_role,
+    CASE WHEN assigned_role = 'admin' THEN 
+      (SELECT substring(upper(md5(random()::text)) from 1 for 8))
+    ELSE NULL END,
+    NOW()
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 -- ── 2. SESSIONS (JOB PIPELINES) TABLE ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.sessions (
   id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
