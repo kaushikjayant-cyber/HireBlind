@@ -220,18 +220,6 @@ export default function Upload() {
         throw new Error(`Database error: ${dbError.message}`)
       }
 
-      // 6. Log PII stripping events
-      if (anon.pii_found?.length) {
-        const logs = anon.pii_found.map((p) => ({
-          resume_id: id,
-          session_id: sessionId,
-          field_stripped: p.field,
-          stripped_at: new Date().toISOString(),
-          stripped_by: 'system',
-        }))
-        await supabase.from('pii_audit_log').insert(logs)
-      }
-
       updateFile(id, { progress: 100, status: 'done' })
     } catch (err) {
       const msg = err.message || 'Processing failed'

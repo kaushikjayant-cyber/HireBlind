@@ -249,3 +249,10 @@ async def analyze_resume(
         "pii_found": pii_result.get("pii_found", []),
         "score": score_result,
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    logger.info("Starting microservice with uvicorn on http://127.0.0.1:8001")
+    uvicorn.run("app:app", host="127.0.0.1", port=8001, reload=True)
+

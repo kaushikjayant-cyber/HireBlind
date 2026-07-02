@@ -43,7 +43,7 @@ router.get('/', requireAdmin, async (req, res) => {
         timestamp: e.stripped_at,
         session_id: e.session_id,
         resume_id: e.resume_id,
-        detail: `PII field stripped: ${e.field_stripped}`,
+        detail: `PII fields stripped: ${Array.isArray(e.pii_fields_removed) ? e.pii_fields_removed.join(', ') : (e.field_stripped || 'unknown')}`,
         actor: e.stripped_by || 'system',
       });
     }

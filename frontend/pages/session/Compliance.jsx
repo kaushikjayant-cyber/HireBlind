@@ -61,7 +61,13 @@ export default function Compliance() {
   }
 
   const piiTypeGroups = piiLogs.reduce((acc, log) => {
-    acc[log.field_stripped] = (acc[log.field_stripped] || 0) + 1
+    if (Array.isArray(log.pii_fields_removed)) {
+      log.pii_fields_removed.forEach((field) => {
+        acc[field] = (acc[field] || 0) + 1
+      })
+    } else if (log.field_stripped) {
+      acc[log.field_stripped] = (acc[log.field_stripped] || 0) + 1
+    }
     return acc
   }, {})
 
@@ -151,7 +157,15 @@ export default function Compliance() {
                   <tr key={log.id || i} className="hover:bg-gray-50">
                     <td className="py-2 pr-4 font-mono text-xs text-gray-500">{log.resume_id?.slice(0, 8)}...</td>
                     <td className="py-2 pr-4">
-                      <span className="badge-red">{log.field_stripped}</span>
+                      {Array.isArray(log.pii_fields_removed) ? (
+                        <div className="flex flex-wrap gap-1">
+                          {log.pii_fields_removed.map((field) => (
+                            <span key={field} className="badge-red">{field}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="badge-red">{log.field_stripped || 'unknown'}</span>
+                      )}
                     </td>
                     <td className="py-2 pr-4 text-gray-500 text-xs">{log.stripped_by}</td>
                     <td className="py-2 text-gray-400 text-xs">{new Date(log.stripped_at).toLocaleString('nl-NL')}</td>

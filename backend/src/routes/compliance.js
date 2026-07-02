@@ -31,8 +31,14 @@ router.get('/:session_id', requireRecruiterOrAdmin, async (req, res) => {
 
     const pii_by_type = {};
     for (const log of pii_logs) {
-      const ft = log.field_stripped || 'unknown';
-      pii_by_type[ft] = (pii_by_type[ft] || 0) + 1;
+      if (Array.isArray(log.pii_fields_removed)) {
+        for (const ft of log.pii_fields_removed) {
+          pii_by_type[ft] = (pii_by_type[ft] || 0) + 1;
+        }
+      } else {
+        const ft = log.field_stripped || 'unknown';
+        pii_by_type[ft] = (pii_by_type[ft] || 0) + 1;
+      }
     }
 
     const checklist = {

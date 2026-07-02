@@ -128,3 +128,37 @@ export async function checkHealth() {
   if (!res.ok) throw new Error('Backend not reachable')
   return res.json()
 }
+
+/**
+ * GET /api/sessions/{id}  — Recruiter or Admin
+ */
+export async function fetchSessionAPI(id) {
+  const res = await fetch(`${BASE}/api/sessions/${id}`, {
+    headers: { 'X-User-Id': getUserId() },
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Fetch session failed (${res.status})`)
+  }
+  return res.json()
+}
+
+/**
+ * PATCH /api/sessions/{id}  — Recruiter or Admin
+ */
+export async function updateSessionAPI(id, updates) {
+  const res = await fetch(`${BASE}/api/sessions/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': getUserId(),
+    },
+    body: JSON.stringify(updates),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Update session failed (${res.status})`)
+  }
+  return res.json()
+}
+

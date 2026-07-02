@@ -6,50 +6,78 @@ const BASE = import.meta.env.VITE_API_URL || ''
 export const useAuthStore = create((set, get) => ({
   user: null,
   role: null,
+  adminKey: null,
   loading: true,
   session: null,
 
   initialize: async () => {
-    set({ loading: true })
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
-      // Only admin and recruiter are valid roles
-      const rawRole = profile?.role || session?.user?.user_metadata?.role || 'recruiter'
-      const validRole = ['admin', 'recruiter'].includes(rawRole) ? rawRole : 'recruiter'
-      set({
-        user: session.user,
-        session,
-        role: validRole,
-        loading: false,
-      })
-    } else {
-      set({ user: null, session: null, role: null, loading: false })
-    }
-
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    try {
+      set({ loading: true })
+      const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-        const rawRole = profile?.role || session.user.user_metadata?.role || 'recruiter'
-        const validRole = ['admin', 'recruiter'].includes(rawRole) ? rawRole : 'recruiter'
+        let validRole = 'recruiter'
+        try {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('role, admin_key')
+            .eq('id', session.user.id)
+            .single()
+          const rawRole = profile?.role || session?.user?.user_metadata?.role || 'recruiter'
+          validRole = ['admin', 'recruiter'].includes(rawRole) ? rawRole : 'recruiter'
+          var adminKeyVal = profile?.admin_key || null
+        } catch (profileErr) {
+          console.error('Error fetching user profile:', profileErr)
+        }
         set({
           user: session.user,
           session,
           role: validRole,
+          adminKey: adminKeyVal || null,
           loading: false,
         })
       } else {
-        set({ user: null, session: null, role: null, loading: false })
+        set({ user: null, session: null, role: null, adminKey: null, loading: false })
       }
-    })
+    } catch (err) {
+      console.error('[authStore] initialization error:', err)
+      set({ user: null, session: null, role: null, loading: false })
+    }
+
+    try {
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        try {
+          if (session?.user) {
+            let validRole = 'recruiter'
+            try {
+              const { data: profile } = await supabase
+                .from('users')
+                .select('role, admin_key')
+                .eq('id', session.user.id)
+                .single()
+              const rawRole = profile?.role || session.user.user_metadata?.role || 'recruiter'
+              validRole = ['admin', 'recruiter'].includes(rawRole) ? rawRole : 'recruiter'
+              var adminKeyVal = profile?.admin_key || null
+            } catch (profileErr) {
+              console.error('Error fetching profile in auth state change:', profileErr)
+            }
+            set({
+              user: session.user,
+              session,
+              role: validRole,
+              adminKey: adminKeyVal || null,
+              loading: false,
+            })
+          } else {
+            set({ user: null, session: null, role: null, adminKey: null, loading: false })
+          }
+        } catch (stateChangeErr) {
+          console.error('[authStore] Auth state change handler error:', stateChangeErr)
+          set({ loading: false })
+        }
+      })
+    } catch (eventErr) {
+      console.error('[authStore] Failed to register auth state change listener:', eventErr)
+    }
   },
 
   login: async (email, password) => {
@@ -124,7 +152,23 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     await supabase.auth.signOut()
-    set({ user: null, session: null, role: null })
+    set({ user: null, session: null, role: null, adminKey: null })
+  },
+
+  rotateAdminKey: async () => {
+    const user = get().user
+    if (!user) return
+    const response = await fetch(`${BASE}/api/admin-key/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_id: user.id }),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to generate admin key')
+    }
+    const data = await response.json()
+    set({ adminKey: data.admin_key })
+    return data.admin_key
   },
 
   isAdmin: () => get().role === 'admin',

@@ -161,7 +161,12 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-800">
-                      <span className="text-amber-600">{log.field_stripped}</span> stripped
+                      {Array.isArray(log.pii_fields_removed) ? (
+                        <span className="text-amber-600">{log.pii_fields_removed.join(', ')}</span>
+                      ) : (
+                        <span className="text-amber-600">{log.field_stripped || 'unknown'}</span>
+                      )}{' '}
+                      stripped
                     </p>
                     <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3" />

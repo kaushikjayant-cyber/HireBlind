@@ -1,6 +1,10 @@
 import { create } from 'zustand'
-import { supabase } from '../lib/supabase'
-import { useAuthStore } from './authStore'
+import {
+  fetchSessionsAPI,
+  fetchSessionAPI,
+  createSessionAPI,
+  updateSessionAPI
+} from '../lib/api'
 
 export const useSessionStore = create((set, get) => ({
   sessions: [],
@@ -9,50 +13,40 @@ export const useSessionStore = create((set, get) => ({
 
   fetchSessions: async () => {
     set({ loading: true })
-    const { role, user } = useAuthStore.getState()
-
-    let query = supabase.from('sessions').select('*').order('created_at', { ascending: false })
-
-    // Recruiter sees only their own sessions; admin sees all
-    if (role === 'recruiter') {
-      query = query.eq('created_by', user?.id)
+    try {
+      const data = await fetchSessionsAPI()
+      set({ sessions: data || [] })
+    } catch (err) {
+      console.error('[sessionStore] fetchSessions failed:', err)
+    } finally {
+      set({ loading: false })
     }
-    // Admin: no filter — sees all sessions
-
-    const { data, error } = await query
-    if (!error) set({ sessions: data || [] })
-    set({ loading: false })
   },
 
   fetchSession: async (id) => {
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('id', id)
-      .single()
-    if (!error) set({ currentSession: data })
-    return data
+    try {
+      const data = await fetchSessionAPI(id)
+      set({ currentSession: data })
+      return data
+    } catch (err) {
+      console.error('[sessionStore] fetchSession failed:', err)
+      throw err
+    }
   },
 
   createSession: async (sessionData) => {
-    const { data, error } = await supabase
-      .from('sessions')
-      .insert(sessionData)
-      .select()
-      .single()
-    if (error) throw error
+    const payload = {
+      job_title: sessionData.job_title,
+      job_description: sessionData.job_description,
+      status: sessionData.status || 'active',
+    }
+    const data = await createSessionAPI(payload)
     set((state) => ({ sessions: [data, ...state.sessions] }))
     return data
   },
 
   updateSession: async (id, updates) => {
-    const { data, error } = await supabase
-      .from('sessions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-    if (error) throw error
+    const data = await updateSessionAPI(id, updates)
     set((state) => ({
       sessions: state.sessions.map((s) => (s.id === id ? data : s)),
       currentSession: state.currentSession?.id === id ? data : state.currentSession,

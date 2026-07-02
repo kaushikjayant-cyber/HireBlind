@@ -1,13 +1,39 @@
 import { useState, useEffect } from 'react'
-import { Users, Settings, Mail, Shield, Trash2, AlertCircle } from 'lucide-react'
+import { Users, Settings, Mail, Shield, Trash2, AlertCircle, Key, Copy, Check, RefreshCw } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuthStore } from '../../store/authStore'
 
 export default function AdminSettings() {
-  const { user } = useAuthStore()
+  const { user, adminKey, rotateAdminKey } = useAuthStore()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [rotating, setRotating] = useState(false)
+
+  const handleCopyKey = () => {
+    if (!adminKey) return
+    navigator.clipboard.writeText(adminKey)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleRotateKey = async () => {
+    if (!window.confirm('Are you sure you want to rotate your admin key? Any recruiters currently trying to register with the old key will need the new one.')) {
+      return
+    }
+    setRotating(true)
+    try {
+      await rotateAdminKey()
+      setMessage('Admin key regenerated successfully!')
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to rotate admin key')
+    } finally {
+      setRotating(false)
+    }
+  }
 
   useEffect(() => { loadUsers() }, [])
 
@@ -61,6 +87,45 @@ export default function AdminSettings() {
         </div>
         <div className="mt-4">
           <button className="btn-primary">Save Settings</button>
+        </div>
+      </div>
+
+      {/* Recruiter Registration Key */}
+      <div className="card bg-gradient-to-br from-indigo-50/40 via-white to-indigo-50/20 border-indigo-100 shadow-sm">
+        <h2 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <Key className="w-5 h-5 text-indigo-500" />
+          Recruiter Invite Key
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Provide this key to recruiters in your organization. They must enter it during registration to link their account to your tenant.
+        </p>
+
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <input
+              type="text"
+              readOnly
+              value={adminKey || 'NO KEY GENERATED'}
+              className="input-field font-mono uppercase tracking-widest text-center text-lg font-bold bg-gray-50 border-gray-200 select-all pr-10"
+            />
+            <button
+              onClick={handleCopyKey}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-gray-100 transition-colors"
+              title="Copy Key"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
+
+          <button
+            onClick={handleRotateKey}
+            disabled={rotating}
+            className="btn-secondary flex items-center gap-2 py-2.5"
+            title="Generate new key"
+          >
+            <RefreshCw className={`w-4 h-4 ${rotating ? 'animate-spin' : ''}`} />
+            {rotating ? 'Generating...' : 'Rotate Key'}
+          </button>
         </div>
       </div>
 
